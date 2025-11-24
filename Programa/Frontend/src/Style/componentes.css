@@ -1,0 +1,152 @@
+
+.auth-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.auth-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  min-width: 100%;
+  min-height: 100%;
+
+  object-fit: cover;
+  z-index: -3;
+}
+.auth-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  width: 100vw;
+  height: 100vh;
+
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(6px);
+  z-index: -2;
+}
+
+.auth-box {
+  position: relative;
+  background: var(--candy-white-soft);
+
+  padding: 40px 55px;
+  border-radius: 20px;
+
+  box-shadow: 0 0 30px var(--candy-shadow);
+  text-align: center;
+  width: 90%;
+  max-width: 420px;
+}
+
+.auth-title {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--candy-pink);
+  margin-bottom: 25px;
+  letter-spacing: 2px;
+}
+
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.auth-form input {
+  padding: 12px 15px;
+  font-size: 1.1rem;
+
+  border-radius: 10px;
+  border: none;
+  outline: none;
+
+  background: var(--candy-white);
+  box-shadow: 0 0 10px var(--candy-shadow);
+}
+
+
+.auth-form button {
+  background: linear-gradient(
+    45deg,
+    var(--candy-pink),
+    var(--candy-pink-light)
+  );
+
+  padding: 12px 15px;
+
+  font-size: 1.3rem;
+  font-weight: bold;
+  border: none;
+  color: white;
+
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+
+  box-shadow: 0 5px 15px var(--candy-shadow);
+}
+
+.auth-form button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 25px var(--candy-shadow-strong);
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.menu-buttons button {
+  background: linear-gradient(45deg, var(--candy-pink), var(--candy-pink-light));
+  border: none;
+  padding: 14px;
+  border-radius: 12px;
+
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+
+  transition: 0.2s;
+  box-shadow: 0 5px 15px var(--candy-shadow);
+}
+
+.cargar-box {
+  position: relative;
+  background: var(--candy-white-soft);
+
+  padding: 40px 55px;
+  border-radius: 20px;
+
+  box-shadow: 0 0 30px var(--candy-shadow);
+  text-align: center;
+  width: 90%;
+  max-width: 600px;
+}
+
+
+.menu-buttons button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 25px var(--candy-shadow-strong);
+}
+
+
+@media (max-width: 480px) {
+  .auth-title {
+    font-size: 2.2rem;
+  }
+
+  .auth-box {
+    padding: 30px 35px;
+  }
+}
