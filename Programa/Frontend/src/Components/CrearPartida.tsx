@@ -18,7 +18,7 @@ export default function CrearPartida() {
     };
     console.log("Partida creada:", partida);
     alert("Partida creada con éxito !");
-    navigate("/");
+    navigate("/partida");
   };
 
   return (

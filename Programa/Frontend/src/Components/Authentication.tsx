@@ -22,7 +22,6 @@ export default function Autentification() {
             onChange={(e) => setNombre(e.target.value)}
             required
           />
-
           <button type="submit">Iniciar</button>
         </form>
       </div>

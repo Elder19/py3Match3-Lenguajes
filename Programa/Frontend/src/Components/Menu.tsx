@@ -11,7 +11,7 @@ export default function Menu() {
         <div className="menu-buttons">
           <button onClick={() => navigate("/crearpartida")}>Crear partida</button>
           <button onClick={() => navigate("/cargar")}>Unirse a una partida</button>
-          <button onClick={() => navigate("/")}>Ver ranking</button>
+          <button onClick={() => navigate("/rankin")}>Ver ranking</button>
         </div>
       </div>
     </div>
