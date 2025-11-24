@@ -1,37 +1,18 @@
 class Jugador {
-  constructor(nickname) {
+  constructor(id, nickname) {
+    this.id = id;
     this.nickname = nickname;
     this.puntaje = 0;
-    this.celdasSeleccionadas = [];
-    this.estado=false;
+    this.ultimaAccion = null;
   }
 
-  seleccionarCelda(celda) {
-    this.celdasSeleccionadas.push(celda);
-    celda.seleccionar();
+  sumarPuntos(n) {
+    this.puntaje += n * n; 
   }
 
-  limpiarSeleccion() {
-    this.celdasSeleccionadas.forEach(c => c.deseleccionar());
-    this.celdasSeleccionadas = [];
+  actualizarTiempo() {
+    this.ultimaAccion = Date.now();
   }
-
-  sumarPuntos(matchCount) {
-    this.puntaje += Math.pow(matchCount, 2);
-  }
-
-  cambiarestado(){
-    if (this.estado==false){
-        this.estado=true;
-    }
-    else {
-        this.estado = false;
-    }
-  }
-
- esActivo() {
-  return this.estado;
-}
 }
 
 module.exports = Jugador;
