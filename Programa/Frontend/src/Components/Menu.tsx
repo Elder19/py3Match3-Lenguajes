@@ -9,7 +9,7 @@ export default function Menu() {
       <div className="auth-box">
         <h1 className="auth-title">MATCH _3</h1>
         <div className="menu-buttons">
-          <button onClick={() => navigate("/")}>Crear partida</button>
+          <button onClick={() => navigate("/crearpartida")}>Crear partida</button>
           <button onClick={() => navigate("/cargar")}>Unirse a una partida</button>
           <button onClick={() => navigate("/")}>Ver ranking</button>
         </div>

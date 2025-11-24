@@ -141,6 +141,50 @@
 }
 
 
+.crear-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  text-align: left;
+}
+
+.crear-label {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--candy-pink-dark);
+}
+
+.crear-select,
+.crear-input {
+  padding: 12px;
+  font-size: 1.1rem;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  background: var(--candy-white);
+  box-shadow: 0 0 10px var(--candy-shadow);
+}
+
+.crear-btn {
+  margin-top: 10px;
+  background: linear-gradient(45deg, var(--candy-pink), var(--candy-pink-light));
+  padding: 12px;
+  border: none;
+  color: white;
+  font-size: 1.3rem;
+  font-weight: bold;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+  box-shadow: 0 5px 15px var(--candy-shadow);
+}
+
+.crear-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 25px var(--candy-shadow-strong);
+}
+
+
 @media (max-width: 480px) {
   .auth-title {
     font-size: 2.2rem;
