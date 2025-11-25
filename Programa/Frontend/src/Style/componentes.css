@@ -504,3 +504,9 @@
   font-weight: 700;         
   color: #000000;            
 }
+
+.celda-seleccionada {
+  background: rgba(150, 123, 65, 0.6);
+  box-shadow: 0 0 1.6vh var(--candy-pink-light);
+  transform: scale(0.96);
+}

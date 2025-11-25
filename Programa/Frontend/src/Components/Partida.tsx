@@ -12,9 +12,10 @@ import Morado from "../assets/morado.png";
 export default function Partida() {
   const { state } = useLocation();
   const { tipoJuego, tiempo, tematica, jugadores } = state || {};
-
   const [puntos, setPuntos] = useState(0);
   const [segundosRestantes, setSegundosRestantes] = useState<number | null>(null);
+  const [celdasSeleccionadas, setCeldasSeleccionadas] = useState<Set<string>>(new Set());
+  
 
   console.log("Datos de la partida:", state);
 
@@ -26,6 +27,7 @@ export default function Partida() {
     n: Naranja,
     m: Morado,
   };
+  const letrasDisponibles = Object.keys(imageMap); 
 
   const [tablero, setTablero] = useState([
     ["a","m","n","n","a","v","v"],
@@ -73,20 +75,103 @@ export default function Partida() {
     return `${mm}:${ss}`;
   };
 
+  const estadocelda = (fila: number, columna: number) => {
+    const key = `${fila}-${columna}`;
+    setCeldasSeleccionadas((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key); 
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+
+  const validar = () => {
+    let x: string | null = null;
+    for (const key of celdasSeleccionadas) {
+      const [iStr, jStr] = key.split("-");
+      const i = parseInt(iStr, 10);
+      const j = parseInt(jStr, 10);
+      if (x === null) {
+        x = tablero[i][j];  
+      } else {
+        if (x !== tablero[i][j]) {
+          return false;   
+        }
+      }
+    }
+    return true;                 
+  };
+
+
+
+
+
+  const handleValidar = () => {
+    if (celdasSeleccionadas.size === 0) return;
+    if (celdasSeleccionadas.size < 3) {
+      alert("Debes de seleccionar mas de 3 celdas")
+      return;
+    }
+
+    if (validar() == true){
+      setTablero((prev) => {
+        const nuevoTablero = prev.map((fila) => [...fila]); 
+        celdasSeleccionadas.forEach((key) => {
+          const [iStr, jStr] = key.split("-");
+          const i = parseInt(iStr, 10);
+          const j = parseInt(jStr, 10);
+          const randomIndex = Math.floor(
+            Math.random() * letrasDisponibles.length
+          );
+          const nuevaLetra = letrasDisponibles[randomIndex];
+          nuevoTablero[i][j] = nuevaLetra;
+        });
+      return nuevoTablero;
+      });
+      setCeldasSeleccionadas(new Set());
+    }
+    else {
+      alert("movimiento invalido")
+      setCeldasSeleccionadas(new Set());
+    }
+  };
+
+
+
+
+
+
+
   return (
     <div className="auth-container partida-container">
       <div className="tablero-wrapper">
         <div className="tablero-grid">
           {tablero.map((fila, i) =>
-            fila.map((celda, j) => (
-              <div key={`${i}-${j}`} className="celda">
-                <img src={imageMap[celda]} className="candy-img" alt="candy" />
-              </div>
-            ))
+            fila.map((celda, j) => {
+              const key = `${i}-${j}`;
+              const seleccionada = celdasSeleccionadas.has(key);
+
+              return (
+                <div
+                  key={key}
+                  className={`celda ${seleccionada ? "celda-seleccionada" : ""}`}
+                  onClick={() => estadocelda(i, j)}
+                >
+                  <img
+                    src={imageMap[celda]}
+                    className="candy-img"
+                    alt="candy"
+                  />
+                </div>
+              );
+            })
           )}
         </div>
       </div>
-
       <div className="game-details-container">
         <div className="game-header">
           <h2>Juego en Curso</h2>
@@ -124,7 +209,6 @@ export default function Partida() {
             </div>
           </div>
         </div>
-
         <div className="game-meta">
           <p className="game-meta-row">
             <span className="game-meta-label">Tipo:</span>
@@ -135,8 +219,7 @@ export default function Partida() {
             <span className="game-meta-value">{tematica}</span>
           </p>
         </div>
-
-        <button className="crear-btn"> Validar </button>
+        <button className="crear-btn"  onClick={handleValidar} > Validar </button>
       </div>
     </div>
   );
