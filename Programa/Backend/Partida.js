@@ -1,6 +1,7 @@
 const Tablero = require('./Tablero');
 const Jugador = require('./Jugador');
 const config = require('./configPartida');
+const { supabase } = require('../config/supabaseClient');  // Cliente de Supabase
 
 class Partida {
   constructor(tematica, tipo , valorPersonalizado = null) {
@@ -37,7 +38,7 @@ class Partida {
         console.log(` Partida ${this.codigo} eliminada por inactividad.`);
         this.estado = "cancelada";
       }
-    }, 3 * 60 * 1000);
+    }, 3 * 60 * 1000); // 3 minutos de inactividad
   }
 
   configurarModo(tipo, valorPersonalizado) {
@@ -144,7 +145,7 @@ class Partida {
     return ganadores;
   }
 
-  finalizarPartida(razon) {
+  async finalizarPartida(razon) {
     if (this.estado === "finalizada") return;
 
     this.estado = "finalizada";
@@ -154,6 +155,65 @@ class Partida {
 
     console.log(`Partida ${this.codigo} finalizada (${razon})`);
     console.log("Ganador(es):", ganadores.map(g => g.nickname).join(", "));
+
+    // Guardar los datos en la base de datos
+    await this.insertarDatosBD();
+  }
+
+  // Insertar los datos de la partida, jugadores y ranking al final de la partida
+  async insertarDatosBD() {
+    try {
+      // Insertar la partida
+      const { data: partidaData, error: partidaError } = await supabase
+        .from("partidas")
+        .insert([{
+          codigo: this.codigo,
+          tematica: this.tematica,
+          tipo_juego: this.tipo,
+          max_jugadores: this.jugadores.length,
+          estado: this.estado,
+          fecha_creacion: new Date()
+        }])
+        .select();
+
+      if (partidaError) throw new Error("Error al insertar partida");
+
+      // Insertar jugadores
+      for (const jugador of this.jugadores) {
+        const { error: jugadorError } = await supabase
+          .from("jugadores")
+          .insert([{
+            nickname: jugador.nickname,
+            puntaje: jugador.puntaje,
+            estado: "finalizado", // Estado final del jugador
+            partida_id: partidaData[0].id
+          }]);
+
+        if (jugadorError) {
+          console.error("Error al insertar jugador:", jugadorError);
+        }
+      }
+
+      // Insertar ranking global
+      const rankingData = this.jugadores.map(jugador => ({
+        partida_id: partidaData[0].id,
+        nickname: jugador.nickname,
+        puntaje: jugador.puntaje,
+        tematica: this.tematica,
+        tiempo_invertido: this.limiteTiempo,  // O el tiempo real invertido
+        fecha: new Date(),
+      }));
+
+      const { error: rankingError } = await supabase
+        .from("ranking_global")
+        .insert(rankingData);
+
+      if (rankingError) throw new Error("Error al insertar en ranking global");
+
+      console.log("Datos de la partida insertados exitosamente.");
+    } catch (error) {
+      console.error("Error al insertar datos en la base de datos:", error.message);
+    }
   }
 }
 
