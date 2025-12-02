@@ -1,27 +1,27 @@
-const Tablero = require('./Tablero');
-const Jugador = require('./Jugador');
-const config = require('./configPartida');
-const { supabase } = require('../config/supabaseClient');  // Cliente de Supabase
+// Backend/Partida.js
+const Tablero = require("./Tablero");
+const Jugador = require("./Jugador");
+const config = require("./configPartida");
+const { supabase } = require("../config/supabaseClient");
 
 class Partida {
-  constructor(tematica, tipo , valorPersonalizado = null) {
+  constructor(tematica, tipo, valorPersonalizado = null, cantidadMaximaJugadores = 2, room) {
     this.codigo = this.generarCodigo();
+    this.room = room;
     this.tematica = tematica;
-    this.tipo = tipo; // "vs" o "vstiempo"
-    this.jugadores = [];
+    this.tipo = tipo; // "vs" | "vstiempo"
+    this.jugadores = []; // array de Jugador
     this.tablero = new Tablero();
     this.timersJugador = {};
     this.timerVida = null;
     this.timerGlobal = null;
     this.estado = "esperando";
-
+    this.cantidadMaximaJugadores = cantidadMaximaJugadores;
     this.matchActuales = 0;
     this.limiteMatch = 0;
     this.limiteTiempo = 0;
 
-    // Configurar el modo de juego (cantidad de match o tiempo)
     this.configurarModo(tipo, valorPersonalizado);
-
     this.iniciarTimerDeVida();
   }
 
@@ -33,35 +33,49 @@ class Partida {
   }
 
   iniciarTimerDeVida() {
+    if (this.timerVida) clearTimeout(this.timerVida);
     this.timerVida = setTimeout(() => {
       if (this.estado !== "jugando") {
-        console.log(` Partida ${this.codigo} eliminada por inactividad.`);
+        console.log(`Partida ${this.codigo} eliminada por inactividad.`);
         this.estado = "cancelada";
       }
-    }, 3 * 60 * 1000); // 3 minutos de inactividad
+    }, 3 * 60 * 1000);
   }
 
   configurarModo(tipo, valorPersonalizado) {
     if (tipo === "vs") {
       this.limiteMatch = valorPersonalizado || config.defaultMatchLimit;
-      console.log(` Modo VS: límite de ${this.limiteMatch} match`);
+      console.log(`Modo VS: límite de ${this.limiteMatch} match`);
     } else if (tipo === "vstiempo") {
       this.limiteTiempo = valorPersonalizado || config.defaultTiempoMin;
       console.log(`Modo VS Tiempo: duración ${this.limiteTiempo} minutos`);
     }
   }
 
-  agregarJugador(nickname) {
+  // nickname: string, socket: Socket object
+  agregarJugador(nickname, socket) {
+    if (this.jugadores.length >= this.cantidadMaximaJugadores) {
+      return 0;
+    }
+
     const id = Math.random().toString(36).slice(2);
-    const j = new Jugador(id, nickname);
+    // Guardamos socketId (string) en jugador
+    const j = new Jugador(id, nickname, socket.id);
     this.jugadores.push(j);
     this.timersJugador[id] = null;
+
+    // Reiniciar timer de vida porque hubo actividad
+    this.iniciarTimerDeVida();
+
     return j;
   }
 
   iniciar() {
     this.estado = "jugando";
-    if (this.timerVida) clearTimeout(this.timerVida);
+    if (this.timerVida) {
+      clearTimeout(this.timerVida);
+      this.timerVida = null;
+    }
 
     if (this.tipo === "vstiempo") {
       this.iniciarCuentaRegresiva();
@@ -72,6 +86,7 @@ class Partida {
     const duracion = this.limiteTiempo * 60 * 1000;
     console.log(`Partida ${this.codigo} durará ${this.limiteTiempo} min`);
 
+    if (this.timerGlobal) clearTimeout(this.timerGlobal);
     this.timerGlobal = setTimeout(() => {
       console.log("Tiempo agotado.");
       this.finalizarPartida("tiempo");
@@ -81,16 +96,14 @@ class Partida {
   seleccionarCelda(jugadorId, x, y) {
     if (this.estado !== "jugando") return;
 
-    const jugador = this.jugadores.find(j => j.id === jugadorId);
+    const jugador = this.jugadores.find((j) => j.id === jugadorId);
     if (!jugador) return;
 
     const result = this.tablero.toggleCelda(x, y, jugadorId);
     if (!result.ok) {
-      console.log(` ${result.msg}`);
+      console.log(`${result.msg}`);
       return;
     }
-
-    const celda = result.celda;
 
     if (result.accion === "seleccionada") {
       console.log(`✔ ${jugador.nickname} seleccionó (${x}, ${y})`);
@@ -140,8 +153,8 @@ class Partida {
 
   determinarGanador() {
     if (this.jugadores.length === 0) return null;
-    const max = Math.max(...this.jugadores.map(j => j.puntaje));
-    const ganadores = this.jugadores.filter(j => j.puntaje === max);
+    const max = Math.max(...this.jugadores.map((j) => j.puntaje));
+    const ganadores = this.jugadores.filter((j) => j.puntaje === max);
     return ganadores;
   }
 
@@ -149,21 +162,22 @@ class Partida {
     if (this.estado === "finalizada") return;
 
     this.estado = "finalizada";
-    if (this.timerGlobal) clearTimeout(this.timerGlobal);
+    if (this.timerGlobal) {
+      clearTimeout(this.timerGlobal);
+      this.timerGlobal = null;
+    }
 
     const ganadores = this.determinarGanador();
 
     console.log(`Partida ${this.codigo} finalizada (${razon})`);
-    console.log("Ganador(es):", ganadores.map(g => g.nickname).join(", "));
+    console.log("Ganador(es):", ganadores ? ganadores.map((g) => g.nickname).join(", ") : "N/A");
 
-    // Guardar los datos en la base de datos
+    // Guardar datos
     await this.insertarDatosBD();
   }
 
-  // Insertar los datos de la partida, jugadores y ranking al final de la partida
   async insertarDatosBD() {
     try {
-      // Insertar la partida
       const { data: partidaData, error: partidaError } = await supabase
         .from("partidas")
         .insert([{
@@ -176,31 +190,29 @@ class Partida {
         }])
         .select();
 
-      if (partidaError) throw new Error("Error al insertar partida");
+      if (partidaError) throw new Error(partidaError.message || "Error al insertar partida");
+      if (!partidaData || partidaData.length === 0) throw new Error("No se obtuvo id de la partida");
 
-      // Insertar jugadores
+      const partidaId = partidaData[0].id;
+
       for (const jugador of this.jugadores) {
         const { error: jugadorError } = await supabase
           .from("jugadores")
           .insert([{
             nickname: jugador.nickname,
             puntaje: jugador.puntaje,
-            estado: "finalizado", // Estado final del jugador
-            partida_id: partidaData[0].id
+            estado: "finalizado",
+            partida_id: partidaId
           }]);
-
-        if (jugadorError) {
-          console.error("Error al insertar jugador:", jugadorError);
-        }
+        if (jugadorError) console.error("Error al insertar jugador:", jugadorError);
       }
 
-      // Insertar ranking global
-      const rankingData = this.jugadores.map(jugador => ({
-        partida_id: partidaData[0].id,
+      const rankingData = this.jugadores.map((jugador) => ({
+        partida_id: partidaId,
         nickname: jugador.nickname,
         puntaje: jugador.puntaje,
         tematica: this.tematica,
-        tiempo_invertido: this.limiteTiempo,  // O el tiempo real invertido
+        tiempo_invertido: this.limiteTiempo,
         fecha: new Date(),
       }));
 
@@ -208,12 +220,44 @@ class Partida {
         .from("ranking_global")
         .insert(rankingData);
 
-      if (rankingError) throw new Error("Error al insertar en ranking global");
+      if (rankingError) throw new Error(rankingError.message || "Error al insertar en ranking global");
 
       console.log("Datos de la partida insertados exitosamente.");
     } catch (error) {
-      console.error("Error al insertar datos en la base de datos:", error.message);
+      console.error("Error al insertar datos en la base de datos:", error.message || error);
     }
+  }
+  verIdPorSocket(socketId) {
+    for (const j of this.jugadores) {
+      if (j.socketId === socketId) return j.id;
+    }
+    return null;
+  }
+
+  verTablero() {
+    if (typeof this.tablero.toJSON === "function") return this.tablero.toJSON();
+    return this.tablero;
+  }
+
+  verResumen() {
+    return {
+      codigo: this.codigo,
+      room: this.room,
+      tematica: this.tematica,
+      tipo: this.tipo,
+      estado: this.estado,
+      jugadores: this.jugadores.map(j => ({ id: j.id, nickname: j.nickname, puntaje: j.puntaje, socketId: j.socketId })),
+      tablero: this.verTablero(),
+      matchActuales: this.matchActuales,
+      limiteMatch: this.limiteMatch,
+      limiteTiempo: this.limiteTiempo
+    };
+  }
+
+  marcarDesconexionJugador(jugadorId) {
+    const j = this.jugadores.find(x => x.id === jugadorId);
+    if (!j) return;
+    j.estado = "desconectado";
   }
 }
 
