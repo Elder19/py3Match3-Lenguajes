@@ -1,73 +1,64 @@
-import { useState } from "react";
+import { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Context } from "./Context";
 
-export default function CrearPartida() {
-  const [tipoJuego, setTipoJuego] = useState("vs");
-  const [tiempo, setTiempo] = useState(1);
-  const [tematica, setTematica] = useState("dulces");
-  const [jugadores, setJugadores] = useState(2);
+export default function Cargar() {
+  const { socket, username } = useContext(Context);
+  const [codigo, setCodigo] = useState("");
   const navigate = useNavigate();
 
-  const Crear = (e: React.FormEvent) => {
-    e.preventDefault();
-    const partida = {
-      tipoJuego,
-      tiempo: tipoJuego === "vsTiempo" ? tiempo : null,
-      tematica,
-      jugadores,
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("alerta", (msg: string) => {
+      alert(msg);
+    });
+
+    socket.on("mensaje", (msg: string) => {
+      console.log(msg);
+    });
+
+    socket.on("actualizar-partida", (resumen: any) => {
+      console.log("Resumen actualizado:", resumen);
+      navigate(`/partida?room=${codigo}`);
+    });
+
+    return () => {
+      socket?.off("alerta");
+      socket?.off("mensaje");
+      socket?.off("actualizar-partida");
     };
-    console.log("Partida creada:", partida);
-    alert("Partida creada con éxito !");
-    navigate("/partida", { state: partida });
+  }, [socket, codigo, navigate]);
+
+  const Unirse = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!socket) {
+      alert("No hay conexión con el servidor ❌");
+      return;
+    }
+
+    if (!username) {
+      alert("Primero debes ingresar tu nombre en la pantalla principal ❌");
+      return;
+    }
+
+    socket.emit("unirse-partida", codigo, username);
   };
 
   return (
     <div className="auth-container">
-      <div className="auth-box">
-        <h1 className="auth-title">Crear Partida</h1>
-        <form className="crear-form" onSubmit={Crear}>
-          <label className="crear-label">Tipo de juego</label>
-          <select
-            className="crear-select"
-            value={tipoJuego}
-            onChange={(e) => setTipoJuego(e.target.value)}
-          >
-            <option value="vs">cantidad finita de match</option>
-            <option value="vsTiempo">tiempo (contar minutos)</option>
-          </select>
-          {tipoJuego === "vsTiempo" && (
-            <>
-              <label className="crear-label">Minutos de la partida</label>
-              <input
-                type="number"
-                min="1"
-                className="crear-input"
-                value={tiempo}
-                onChange={(e) => setTiempo(Number(e.target.value))}
-              />
-            </>
-          )}
-          <label className="crear-label">Temática</label>
-          <select
-            className="crear-select"
-            value={tematica}
-            onChange={(e) => setTematica(e.target.value)}
-          >
-            <option value="dulces">Dulces (estándar)</option>
-          </select>
-          <label className="crear-label">Cantidad de jugadores</label>
+      <div className="cargar-box">
+        <h1 className="auth-title">Código de la sala</h1>
+        <form onSubmit={Unirse} className="auth-form">
           <input
-            type="number"
-            min="2"
-            className="crear-input"
-            value={jugadores}
-            onChange={(e) => setJugadores(Number(e.target.value))}
+            type="text"
+            placeholder="Ingresa el código"
+            value={codigo}
+            onChange={(e) => setCodigo(e.target.value)}
+            required
           />
-
-          <button className="crear-btn" type="submit">
-            Crear Partida
-          </button>
-
+          <button type="submit">Entrar</button>
         </form>
       </div>
     </div>

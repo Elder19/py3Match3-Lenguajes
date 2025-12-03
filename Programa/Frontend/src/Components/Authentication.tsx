@@ -1,12 +1,14 @@
-import { useState } from "react";
+import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { Context } from "./Context";
 
-export default function Autentification() {
-  const [nombre, setNombre] = useState("");
+export default function Authentication() {
+  const { username, setUsername } = useContext(Context);
   const navigate = useNavigate();
 
   const Agregar = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!username || username.trim() === "") return; // validación simple
     navigate("/menu");
   };
 
@@ -18,8 +20,8 @@ export default function Autentification() {
           <input
             type="text"
             placeholder="Ingresa tu nombre"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             required
           />
           <button type="submit">Iniciar</button>
