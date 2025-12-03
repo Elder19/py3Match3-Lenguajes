@@ -23,7 +23,11 @@ class Partida {
 
     this.configurarModo(tipo, valorPersonalizado);
     this.iniciarTimerDeVida();
+     if (!this.tablero.tieneCombinaciones()) {
+      console.log("Tablero inicial sin combinaciones, regenerando...");
+      this.tablero.rehacerHastaTenerCombinaciones();}
   }
+
 
   generarCodigo() {
     const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -135,6 +139,10 @@ class Partida {
       this.tablero.eliminarGrupo(grupo);
       this.tablero.rellenarVacias();
       this.matchActuales++;
+      if (!this.tablero.tieneCombinaciones()) {
+      console.log("No hay más combinaciones, regenerando tablero...");
+      this.tablero.rehacerHastaTenerCombinaciones();
+    }
 
       console.log(`MATCH ${this.matchActuales} (${jugador.nickname})`);
       this.verificarFinDePartida();
