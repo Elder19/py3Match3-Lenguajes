@@ -10,9 +10,44 @@ class Tablero {
     this.columnas = columnas;
     this.colores = colores;
     this.matriz = [];
+    
     this.generarTablero();
+    this.rehacerHastaTenerCombinaciones();
   }
-
+    
+  tieneCombinaciones() {
+    const visitadas = new Set();
+  
+    for (let x = 0; x < this.filas; x++) {
+      for (let y = 0; y < this.columnas; y++) {
+        const key = `${x},${y}`;
+        if (visitadas.has(key)) continue;
+  
+        const grupo = this.detectarAdyacentes(x, y, visitadas);
+        if (grupo.length >= 3) {
+          return true; 
+        }
+      }
+    }
+  
+    return false;
+  }
+  
+  rehacerHastaTenerCombinaciones(maxIntentos = 100) {
+    let intentos = 0;
+  
+  
+    while (!this.tieneCombinaciones() && intentos < maxIntentos) {
+      this.generarTablero();  
+      intentos++;
+    }
+  
+    if (!this.tieneCombinaciones()) {
+      console.warn("No se pudo garantizar una combinación después de muchos intentos");
+    } else {
+      console.log(`Tablero regenerado con combinaciones en ${intentos} intento(s).`);
+    }
+  }
   generarTablero() {
     this.matriz = Array.from({ length: this.filas }, (_, x) =>
       Array.from({ length: this.columnas }, (_, y) =>
