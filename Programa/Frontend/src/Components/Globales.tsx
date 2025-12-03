@@ -1,23 +1,34 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { io } from "socket.io-client";
-import { SocketContext } from "./SocketContext";
+import { Context } from "./Context";
 
-export default function Globales({ children }) {
-  const [socket, setSocket] = useState(null);
-  const [username, setUsername] = useState("");
+export default function Globales({ children }: { children: React.ReactNode }) {
+  const [socket, setSocket] = useState<any | null>(null);
+  const [username, setUsername] = useState<string>("");
 
   useEffect(() => {
-    const newSocket = io("http://localhost:3000");
+    const newSocket = io("https://verna-nevoid-cyclopaedically.ngrok-free.dev", {
+      transports: ["websocket"],
+      autoConnect: true,
+    });
+
+    newSocket.on("connect", () => {
+      console.log("Socket conectado:", newSocket.id);
+    });
+    newSocket.on("connect_error", (err: any) => {
+      console.error("Error: Socket", err?.message ?? err);
+    });
 
     setSocket(newSocket);
     return () => {
       newSocket.disconnect();
+      setSocket(null);
     };
   }, []);
 
   return (
-    <SocketContext.Provider value={{ socket, username, setUsername }}>
+    <Context.Provider value={{ socket, username, setUsername }}>
       {children}
-    </SocketContext.Provider>
+    </Context.Provider>
   );
 }

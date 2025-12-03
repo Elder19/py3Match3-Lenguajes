@@ -9,7 +9,7 @@ const io = new Server(4040, {
   }
 });
 
-console.log("Servidor Socket.IO escuchando en el puerto 3000...");
+console.log("Servidor Socket.IO escuchando en el puerto 4040...");
 
 const partidas = new Map();
 
@@ -41,7 +41,7 @@ io.on("connection", (socket) => {
 
     socket.join(room);
 
-    socket.emit("partida-creada", { room });
+    socket.emit("partida-creada", { nueva });
     console.log(`Partida creada: ${room} por ${nickname}`);
   });
 
