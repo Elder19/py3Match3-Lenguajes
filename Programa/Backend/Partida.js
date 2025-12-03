@@ -2,10 +2,10 @@
 const Tablero = require("./Tablero");
 const Jugador = require("./Jugador");
 const config = require("./configPartida");
-const { supabase } = require("../config/supabaseClient");
+const { supabase } = require("../db/supabaseClient");
 
 class Partida {
-  constructor(tematica, tipo, valorPersonalizado = null, cantidadMaximaJugadores = 2, room) {
+  constructor(tematica, tipo,  cantidadMaximaJugadores = 2, room, valorPersonalizado = null) {
     this.codigo = this.generarCodigo();
     this.room = room;
     this.tematica = tematica;

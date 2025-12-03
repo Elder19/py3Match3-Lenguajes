@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Fondo from "./Components/Fondo";
+import Globales from "./Components/Globales";
 import Autentification from "./Components/Authentication";
 import Menu from "./Components/Menu";
 import Cargar from "./Components/Cargar";
@@ -12,16 +13,18 @@ import "./Style/componentes.css"
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Fondo />
-      <Routes>
-        <Route path="/" element={<Autentification />} />
-        <Route path="/menu" element={<Menu />} />
-        <Route path="/cargar" element={<Cargar />} />
-        <Route path="/crearpartida" element={<CrearPartida />} />
-        <Route path="/partida" element={<Partida/>} />
-        <Route path="/rankin" element={<Rankin/>} />
-      </Routes>
-    </BrowserRouter>
+    <Globales>
+      <BrowserRouter>
+        <Fondo />
+        <Routes>
+          <Route path="/" element={<Autentification />} />
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/cargar" element={<Cargar />} />
+          <Route path="/crearpartida" element={<CrearPartida />} />
+          <Route path="/partida" element={<Partida/>} />
+          <Route path="/rankin" element={<Rankin/>} />
+        </Routes>
+      </BrowserRouter>
+    </Globales>
   );
 }
