@@ -40,9 +40,10 @@ io.on("connection", (socket) => {
     partidas.set(room, nueva);
 
     socket.join(room);
-
-    socket.emit("partida-creada", { nueva });
+    let resumen = nueva.verResumen();
+    socket.emit("partida-creada", { resumen });
     console.log(`Partida creada: ${room} por ${nickname}`);
+    console.log(`Tablero: ${nueva.tablero.listarMatriz()}`);
   });
 
   // ---------- UNIRSE PARTIDA ----------
@@ -81,15 +82,15 @@ io.on("connection", (socket) => {
     }
 
     p.seleccionarCelda(idJugador, x, y);
-    io.to(room).emit("tablero-actualizado", p.tablero.ObtenerCelda(x, y));
-  });
+    socket.emit("tablero-actualizado", p.tablero.listarMatriz());
 
-  // ---------- VALIDAR ----------
-  socket.on("validar", (room) => {
-    const p = partidas.get(room);
-    if (!p) return;
-    io.to(room).emit("tablero-actualizado", p.verTablero());
   });
+  // ---------- PEDIR TABLERO ----------
+  socket.on("pedir-tablero", (room) => {
+    const p = partidas.get(room);
+    if (!p) return socket.emit("alerta", "Partida no encontrada");
+    io.to(room).emit("tablero-actualizado", p.tablero.listarMatriz());
+  })
 
   // ---------- INICIAR ----------
   socket.on("iniciar-partida", (room) => {
@@ -100,6 +101,27 @@ io.on("connection", (socket) => {
     io.to(room).emit("partida-iniciada", p.verResumen());
 
     console.log(`Partida iniciada: ${room}`);
+  });
+
+  // ---------- VALIDAR MOVIMIENTO ----------
+  socket.on("validar-movimiento", (room) => {
+    const p = partidas.get(room);
+    if (!p) return socket.emit("alerta", "Partida no encontrada");
+
+    const idJugador = p.verIdPorSocket(socket.id);
+    if (!idJugador) {
+      return socket.emit("alerta", "Jugador no registrado en la partida");
+    }
+
+    const valido = p.activarSeleccion(idJugador);
+
+    if (!valido) {
+      return socket.emit("movimiento-invalido", "Movimiento inválido");
+    }
+    p.aplicarMovimiento(idJugador, seleccionadas);
+    io.to(room).emit("tablero-actualizado", p.tablero.listarMatriz());
+    socket.emit("puntos-actualizados", p.jugadores[idJugador].puntaje);
+    console.log("cambio realizado");
   });
 
   // ---------- DESCONECTAR ----------
@@ -122,6 +144,10 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+
+
+
 
 // ---------- GENERAR CÓDIGO ----------
 function generarCodigo() {

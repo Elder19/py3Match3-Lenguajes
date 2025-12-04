@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useLocation } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { Context } from "./Context"; // Asegúrate de la ruta correcta
 import { FaClock, FaTrophy, FaUsers } from "react-icons/fa";
 
 import Rojo from "../assets/rojo.png";
@@ -10,12 +12,16 @@ import Naranja from "../assets/naranja.png";
 import Morado from "../assets/morado.png";
 
 export default function Partida() {
+  const { socket, username } = useContext(Context);
+
   const { state } = useLocation();
   const { tipoJuego, tiempo, tematica, jugadores } = state || {};
   const [puntos, setPuntos] = useState(0);
   const [segundosRestantes, setSegundosRestantes] = useState<number | null>(null);
-  const [celdasSeleccionadas, setCeldasSeleccionadas] = useState<Set<string>>(new Set());
-  
+  const [celdasSeleccionadas, setCeldasSeleccionadas] = useState(new Set());
+  const [tablero, setTablero] = useState<string[][]>([]);
+  const [searchParams] = useSearchParams();
+  const room = searchParams.get("room"); // ← AQUÍ OBTIENES EL CÓDIGO
 
   console.log("Datos de la partida:", state);
 
@@ -29,17 +35,10 @@ export default function Partida() {
   };
   const letrasDisponibles = Object.keys(imageMap); 
 
-  const [tablero, setTablero] = useState([
-    ["a","m","n","n","a","v","v"],
-    ["r","r","n","b","b","v","v"],
-    ["a","b","m","n","r","v","a"],
-    ["m","n","a","b","v","r","m"],
-    ["v","a","r","m","n","b","v"],
-    ["n","v","b","a","m","r","n"],
-    ["r","m","v","n","a","b","r"],
-    ["b","n","a","v","r","m","b"],
-    ["m","a","n","r","b","v","a"]
-  ]);
+  socket.emit('pedir-tablero',room);
+  socket.on('tablero-actualizado', (tableroJuego) =>{
+    setTablero([tableroJuego]);
+  })  
 
 
   useEffect(() => {
@@ -106,41 +105,39 @@ export default function Partida() {
     return true;                 
   };
 
-
-
-
-
   const handleValidar = () => {
-    if (celdasSeleccionadas.size === 0) return;
     if (celdasSeleccionadas.size < 3) {
-      alert("Debes de seleccionar mas de 3 celdas")
+      alert("Debes seleccionar al menos 3 celdas");
       return;
     }
+    if (validar) {
+      const seleccionadasArray: [number, number][] = [];
 
-    if (validar() == true){
-      setTablero((prev) => {
-        const nuevoTablero = prev.map((fila) => [...fila]); 
-        celdasSeleccionadas.forEach((key) => {
-          const [iStr, jStr] = key.split("-");
-          const i = parseInt(iStr, 10);
-          const j = parseInt(jStr, 10);
-          const randomIndex = Math.floor(
-            Math.random() * letrasDisponibles.length
-          );
-          const nuevaLetra = letrasDisponibles[randomIndex];
-          nuevoTablero[i][j] = nuevaLetra;
-        });
-      return nuevoTablero;
+      celdasSeleccionadas.forEach((key) => {
+        const [iStr, jStr] = key.split("-");
+        seleccionadasArray.push([parseInt(iStr, 10), parseInt(jStr, 10)]);
       });
-      setCeldasSeleccionadas(new Set());
-    }
-    else {
-      alert("movimiento invalido")
+
+      socket.emit("validar-movimiento", room);
       setCeldasSeleccionadas(new Set());
     }
   };
 
+  useEffect(() => {
+  socket.on("movimiento-invalido", (msg) => {
+    alert(msg);
+    setCeldasSeleccionadas(new Set());
+  });
 
+  socket.on("puntos-actualizados", (nuevosPuntos) => {
+    setPuntos(nuevosPuntos);
+  });
+
+  return () => {
+    socket.off("movimiento-invalido");
+    socket.off("puntos-actualizados");
+  };
+}, [socket]);
 
 
 

@@ -2,6 +2,7 @@ import { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Context } from "./Context";
 
+
 export default function CrearPartida() {
   const { socket, username } = useContext(Context);
   const [tipoJuego, setTipoJuego] = useState("vs");
@@ -14,9 +15,9 @@ export default function CrearPartida() {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("partida-creada", ({ nueva }) => {
-      console.log("Partida creada en sala:", nueva);
-      navigate(`/partida?room=${nueva}`);
+    socket.on("partida-creada", ({ resumen }) => {
+      console.log("Partida creada en sala:", resumen);
+      navigate(`/partida?room=${resumen.room}`);
     });
 
     return () => {

@@ -56,6 +56,20 @@ class Tablero {
     );
   }
 
+  obtenerCeldasDeJugador(jugadorId) {
+      const resultado = [];
+
+      for (const fila of this.matriz) {
+        for (const celda of fila) {
+        if (celda.seleccionadaPor === jugadorId) {
+            resultado.push(celda);
+          }
+        }
+      }
+
+      return resultado;
+    } 
+
   colorRandom() {
     return this.colores[Math.floor(Math.random() * this.colores.length)];
   }
@@ -167,6 +181,20 @@ class Tablero {
       fila.map(c => c.generarSnapshot())
     );
   }
+listarMatriz() {
+  const lista = [];
+  for (let x = 0; x < this.filas; x++) {
+    for (let y = 0; y < this.columnas; y++) {
+      const celda = this.matriz[x][y];
+      const letra = celda.color ? celda.color[0].toLowerCase() : "_";
+      lista.push(letra);
+    }
+  }
+  return lista;
+}
+
+
+
 }
 
 module.exports = Tablero;
