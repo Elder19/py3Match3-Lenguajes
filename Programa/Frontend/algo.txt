@@ -1,0 +1,6 @@
+
+VITE_API_URL=https://aurorally-unhelpful-elfriede.ngrok-free.dev
+
+
+ #VITE_API_URL=http://localhost:3000
+

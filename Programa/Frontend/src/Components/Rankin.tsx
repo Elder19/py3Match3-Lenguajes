@@ -1,29 +1,67 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+interface RankingItem {
+  idPartida: string;
+  nombreGanador: string;
+  puntaje: number;
+  tematica: string;
+  tiempo: string;
+}
 
 export default function Ranking() {
-  const [lista] = useState([
-    { nombreGanador: "Ana", puntaje: 2040, tematica: "Dulces", tiempo: "05:13", idPartida: "PART-004" },
-    { nombreGanador: "Mariana", puntaje: 1780, tematica: "Dulces", tiempo: "04:10", idPartida: "PART-002" },
-    { nombreGanador: "Julia", puntaje: 1675, tematica: "Dulces", tiempo: "04:02", idPartida: "PART-006" },
-    { nombreGanador: "Brayder", puntaje: 1500, tematica: "Dulces", tiempo: "03:25", idPartida: "PART-001" },
-    { nombreGanador: "Luis", puntaje: 1235, tematica: "Dulces", tiempo: "03:55", idPartida: "PART-005" },
-    { nombreGanador: "Carlos", puntaje: 990, tematica: "Dulces", tiempo: "02:40", idPartida: "PART-003" },
-    { nombreGanador: "Pedro", puntaje: 820, tematica: "Dulces", tiempo: "02:15", idPartida: "PART-007" }
-  ]);
+  const [lista, setLista] = useState<RankingItem[]>([]);
+
+  useEffect(() => {
+    async function cargarRanking() {
+      try {
+        console.log("API_URL en Ranking:", API_URL);
+
+        const res = await fetch(`${API_URL}/api/ranking`, {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          },
+        });
+
+        if (!res.ok) {
+          const texto = await res.text();
+          console.error("Respuesta NO OK:", res.status, texto);
+          return;
+        }
+
+        const data = await res.json();
+        console.log("DATA ranking:", data);
+
+        const adaptada: RankingItem[] = data.map((row: any) => ({
+          idPartida: row.codigo_partida,
+          nombreGanador: row.ganador,
+          puntaje: row.puntaje,
+          tematica: row.tematica,
+          tiempo: `${row.tiempo_invertido} min`,
+        }));
+
+        setLista(adaptada);
+      } catch (err) {
+        console.error("Error en cargarRanking:", err);
+      }
+    }
+
+    cargarRanking();
+  }, []);
 
   const ordenada = [...lista].sort((a, b) => b.puntaje - a.puntaje);
 
   return (
     <div className="auth-container ranking-root">
-     <div className="ranking-header">
-      <div className="ranking-title-container">
-        <h1 className="ranking-title">🏆 Ranking de Partidas</h1>
+      <div className="ranking-header">
+        <div className="ranking-title-container">
+          <h1 className="ranking-title">🏆 Ranking de Partidas</h1>
+        </div>
+        <p className="ranking-subtitle">
+          Explora el historial de las mejores partidas y descubre quién domina cada temática.
+        </p>
       </div>
-
-      <p className="ranking-subtitle">
-        Explora el historial de las mejores partidas y descubre quién domina cada temática.
-      </p>
-    </div>
 
       <div className="ranking-scroll-container">
         <div className="ranking-grid">
@@ -44,6 +82,10 @@ export default function Ranking() {
               </div>
             </div>
           ))}
+
+          {ordenada.length === 0 && (
+            <p style={{ padding: "1rem" }}>Todavía no hay partidas registradas.</p>
+          )}
         </div>
       </div>
     </div>
